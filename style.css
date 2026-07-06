@@ -1,0 +1,287 @@
+:root {
+  --bg: #0B0F14;
+  --surface: #12181F;
+  --surface-raised: #182029;
+  --border: #232C37;
+  --text: #E7EDF3;
+  --text-muted: #8A97A6;
+  --accent-halal: #2ED3A3;
+  --accent-amber: #F0A937;
+  --accent-red: #E5484D;
+  --accent-neutral: #5B6572;
+
+  --font-display: 'Space Grotesk', sans-serif;
+  --font-body: 'Inter', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  min-height: 100vh;
+}
+
+.topbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 18px 28px;
+  border-bottom: 1px solid var(--border);
+}
+
+.topbar__brand {
+  font-family: var(--font-display);
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.topbar__mark--accent { color: var(--accent-halal); }
+
+.topbar__actions { display: flex; gap: 10px; }
+
+.btn {
+  font-family: var(--font-body);
+  font-weight: 600;
+  font-size: 13px;
+  padding: 9px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn--ghost {
+  background: transparent;
+  color: var(--text);
+}
+.btn--ghost:hover { border-color: var(--accent-halal); }
+.btn--primary {
+  background: var(--accent-halal);
+  color: #06231A;
+  border-color: var(--accent-halal);
+}
+.btn--primary:hover { background: #35e3b2; }
+.btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.layout {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 24px;
+  padding: 24px 28px;
+  align-items: start;
+}
+@media (max-width: 900px) {
+  .layout { grid-template-columns: 1fr; }
+}
+
+.paste-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 20px;
+  position: sticky;
+  top: 24px;
+}
+.paste-panel__title {
+  font-family: var(--font-display);
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+.paste-panel__hint {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin: 0 0 14px;
+}
+.paste-panel__textarea {
+  width: 100%;
+  min-height: 260px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 12px;
+  padding: 12px;
+  resize: vertical;
+}
+.paste-panel__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 12px;
+}
+.paste-panel__status {
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.signals-panel__toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+}
+.filter-group { display: flex; gap: 6px; }
+.filter-chip {
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 600;
+  padding: 7px 14px;
+  border-radius: 999px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+.filter-chip--active {
+  background: var(--surface-raised);
+  color: var(--text);
+  border-color: var(--accent-halal);
+}
+.signals-panel__count { color: var(--text-muted); font-size: 12px; }
+
+.signals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 16px;
+}
+
+.card {
+  position: relative;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 16px 16px 16px 20px;
+  overflow: hidden;
+}
+/* Signature element: left-edge bar mengkodekan sinyal bandarmology (buy/sell/neutral) —
+   sekilas pandang, warna kiri kartu langsung kasih tahu arah smart money tanpa baca teks. */
+.card::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--bar-color, var(--accent-neutral));
+}
+
+.card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.card__ticker {
+  font-family: var(--font-mono);
+  font-size: 20px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.badge-halal {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(46, 211, 163, 0.15);
+  color: var(--accent-halal);
+}
+.badge-nonhalal {
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 7px;
+  border-radius: 5px;
+  background: rgba(229, 72, 77, 0.15);
+  color: var(--accent-red);
+}
+.card__confidence {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--text-muted);
+  text-align: right;
+}
+
+.card__prices {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 12px;
+  font-family: var(--font-mono);
+}
+.price-block__label { font-size: 10px; color: var(--text-muted); text-transform: uppercase; }
+.price-block__value { font-size: 14px; font-weight: 600; }
+.price-block__pct { font-size: 11px; }
+.pct-pos { color: var(--accent-halal); }
+.pct-neg { color: var(--accent-red); }
+
+.card__bandar {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: var(--text-muted);
+  border-top: 1px solid var(--border);
+  padding-top: 10px;
+  margin-bottom: 10px;
+}
+
+.card__toggle {
+  font-size: 12px;
+  color: var(--accent-halal);
+  cursor: pointer;
+  background: none;
+  border: none;
+  padding: 0;
+  font-family: var(--font-body);
+  font-weight: 600;
+}
+
+.card__detail {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid var(--border);
+  font-size: 12px;
+  color: var(--text-muted);
+  display: grid;
+  gap: 6px;
+}
+.card__detail[hidden] { display: none; }
+.card__detail dt { color: var(--text); font-weight: 600; display: inline; }
+
+.empty-state {
+  color: var(--text-muted);
+  text-align: center;
+  padding: 60px 0;
+  font-size: 14px;
+}
+
+.modal {
+  position: fixed; inset: 0;
+  background: rgba(4, 7, 10, 0.7);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 20;
+}
+.modal__card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  padding: 24px;
+  width: 420px;
+  max-width: 92vw;
+}
+.modal__hint { color: var(--text-muted); font-size: 12px; margin: 4px 0 10px; }
+.modal__textarea {
+  width: 100%;
+  min-height: 160px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  color: var(--text);
+  font-family: var(--font-mono);
+  font-size: 13px;
+  padding: 10px;
+}
+.modal__row { display: flex; gap: 10px; margin-top: 12px; }
+.modal__status { display: block; margin-top: 8px; font-size: 12px; color: var(--text-muted); }
