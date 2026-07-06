@@ -143,6 +143,14 @@ body {
   color: var(--text-muted);
   text-align: right;
 }
+.card__meta {
+  text-align: right;
+}
+.card__timestamp {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
 
 .card__prices {
   display: grid;
