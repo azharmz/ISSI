@@ -1,33 +1,33 @@
 const els = {
+  btnOpenSignalModal: document.getElementById('btnOpenSignalModal'),
+  signalModal: document.getElementById('signalModal'),
+  btnCloseSignalModal: document.getElementById('btnCloseSignalModal'),
   rawInput: document.getElementById('rawInput'),
   btnParse: document.getElementById('btnParse'),
-  parseStatus: document.getElementById('parseStatus'),
+  parseResult: document.getElementById('parseResult'),
+
   btnRefresh: document.getElementById('btnRefresh'),
   signalsGrid: document.getElementById('signalsGrid'),
   signalCount: document.getElementById('signalCount'),
   emptyState: document.getElementById('emptyState'),
-  filterHalal: document.getElementById('filterHalal'),
+
   btnManageIssi: document.getElementById('btnManageIssi'),
   issiModal: document.getElementById('issiModal'),
+  btnCloseIssiModal: document.getElementById('btnCloseIssiModal'),
   issiInput: document.getElementById('issiInput'),
   btnSaveIssi: document.getElementById('btnSaveIssi'),
-  btnCloseModal: document.getElementById('btnCloseModal'),
   issiStatus: document.getElementById('issiStatus'),
 };
 
 let currentSignals = [];
-let currentFilter = 'all';
 let issiListEmpty = false;
 
 const ADMIN_KEY_STORAGE = 'idx_issi_admin_key';
 
-// Admin key cuma diminta sekali (lewat prompt), lalu disimpan di localStorage browser
-// device ini. Dipakai sebagai header x-admin-key untuk endpoint yang bisa nulis data
-// (parse-signal, issi-list). Kalau salah, backend akan balas 401.
+// --- Admin key: diminta sekali lewat prompt, disimpan di localStorage browser ini ---
 function getAdminKey() {
   return localStorage.getItem(ADMIN_KEY_STORAGE) || '';
 }
-
 function ensureAdminKey() {
   let key = getAdminKey();
   if (!key) {
@@ -36,6 +36,26 @@ function ensureAdminKey() {
   }
   return key;
 }
+
+// --- Modal generik: buka/tutup + klik di luar + tombol Esc ---
+function openModal(modalEl) {
+  modalEl.hidden = false;
+}
+function closeModal(modalEl) {
+  modalEl.hidden = true;
+}
+[els.signalModal, els.issiModal].forEach((modalEl) => {
+  modalEl.addEventListener('click', (e) => {
+    if (e.target === modalEl) closeModal(modalEl); // klik area gelap di luar kartu modal
+  });
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (!els.signalModal.hidden) closeModal(els.signalModal);
+  if (!els.issiModal.hidden) closeModal(els.issiModal);
+});
+
+// --- Rendering kartu sinyal ---
 
 function formatRupiah(n) {
   if (n === null || n === undefined) return '-';
@@ -56,9 +76,6 @@ function bandarColor(bandarmology) {
 
 function renderCard(signal) {
   const barColor = bandarColor(signal.bandarmology);
-  const halalBadge = signal.isHalal
-    ? '<span class="badge-halal">HALAL</span>'
-    : '<span class="badge-nonhalal">NON-HALAL</span>';
 
   const confidenceText = signal.confidence
     ? `${signal.confidence.emoji} ${signal.confidence.score}/10 · ${signal.confidence.label}`
@@ -94,7 +111,7 @@ function renderCard(signal) {
   card.style.setProperty('--bar-color', barColor);
   card.innerHTML = `
     <div class="card__head">
-      <div class="card__ticker">${signal.ticker} ${halalBadge}</div>
+      <div class="card__ticker">${signal.ticker} <span class="badge-halal">HALAL</span></div>
       <div class="card__confidence">${confidenceText}</div>
     </div>
     <div class="card__prices">
@@ -133,21 +150,21 @@ function renderCard(signal) {
   return card;
 }
 
+// Grid utama HANYA menampilkan sinyal halal. Sinyal non-halal tetap tersimpan
+// di Firestore (untuk rekam jejak/audit), tapi cuma ditampilkan sekali sesaat
+// setelah parsing (lihat renderParseResult), bukan di grid ini.
 function renderSignals() {
-  const filtered = currentSignals.filter((s) => {
-    if (currentFilter === 'halal') return s.isHalal;
-    if (currentFilter === 'non-halal') return !s.isHalal;
-    return true;
-  });
+  const halalOnly = currentSignals.filter((s) => s.isHalal);
 
   els.signalsGrid.innerHTML = '';
-  filtered.forEach((s) => els.signalsGrid.appendChild(renderCard(s)));
-  els.signalCount.textContent = `${filtered.length} sinyal`;
-  els.emptyState.hidden = filtered.length > 0;
+  halalOnly.forEach((s) => els.signalsGrid.appendChild(renderCard(s)));
 
+  let countText = `${halalOnly.length} sinyal halal`;
   if (issiListEmpty && currentSignals.length > 0) {
-    els.signalCount.textContent += ' — ⚠️ daftar ISSI belum diisi, semua status "NON-HALAL" sementara default';
+    countText += ' — ⚠️ daftar ISSI belum diisi, semua status default NON-HALAL';
   }
+  els.signalCount.textContent = countText;
+  els.emptyState.hidden = halalOnly.length > 0;
 }
 
 async function loadSignals() {
@@ -157,13 +174,32 @@ async function loadSignals() {
   renderSignals();
 }
 
+// --- Hasil parse ditampilkan transien di dalam modal (termasuk yang non-halal) ---
+function renderParseResult(savedSignals) {
+  els.parseResult.innerHTML = savedSignals
+    .map((s) => {
+      const badge = s.isHalal
+        ? '<span class="badge-halal">HALAL</span>'
+        : '<span class="badge-nonhalal">NON-HALAL</span>';
+      return `<div class="parse-result__item"><span class="parse-result__ticker">${s.ticker}</span>${badge}</div>`;
+    })
+    .join('');
+}
+
+// --- Event: buka/tutup modal Tempel Sinyal ---
+els.btnOpenSignalModal.addEventListener('click', () => {
+  els.parseResult.innerHTML = '';
+  openModal(els.signalModal);
+});
+els.btnCloseSignalModal.addEventListener('click', () => closeModal(els.signalModal));
+
 els.btnParse.addEventListener('click', async () => {
   const rawText = els.rawInput.value.trim();
   if (!rawText) return;
   const adminKey = ensureAdminKey();
   if (!adminKey) return;
   els.btnParse.disabled = true;
-  els.parseStatus.textContent = 'Memproses...';
+  els.parseResult.innerHTML = '<span class="modal__status">Memproses...</span>';
   try {
     const res = await fetch('/api/parse-signal', {
       method: 'POST',
@@ -177,11 +213,11 @@ els.btnParse.addEventListener('click', async () => {
     }
     if (!res.ok) throw new Error(data.error || 'Gagal parsing');
     issiListEmpty = !!data.issiListEmpty;
-    els.parseStatus.textContent = `${data.saved.length} sinyal tersimpan.`;
+    renderParseResult(data.saved);
     els.rawInput.value = '';
     await loadSignals();
   } catch (err) {
-    els.parseStatus.textContent = `Error: ${err.message}`;
+    els.parseResult.innerHTML = `<span class="modal__status">Error: ${err.message}</span>`;
   } finally {
     els.btnParse.disabled = false;
   }
@@ -189,21 +225,15 @@ els.btnParse.addEventListener('click', async () => {
 
 els.btnRefresh.addEventListener('click', loadSignals);
 
-els.filterHalal.addEventListener('click', (e) => {
-  if (!e.target.dataset.filter) return;
-  currentFilter = e.target.dataset.filter;
-  [...els.filterHalal.children].forEach((c) => c.classList.remove('filter-chip--active'));
-  e.target.classList.add('filter-chip--active');
-  renderSignals();
-});
-
+// --- Event: buka/tutup modal Kelola ISSI ---
 els.btnManageIssi.addEventListener('click', async () => {
-  els.issiModal.hidden = false;
+  openModal(els.issiModal);
   const res = await fetch('/api/issi-list');
   const data = await res.json();
   els.issiInput.value = (data.tickers || []).join('\n');
 });
-els.btnCloseModal.addEventListener('click', () => { els.issiModal.hidden = true; });
+els.btnCloseIssiModal.addEventListener('click', () => closeModal(els.issiModal));
+
 els.btnSaveIssi.addEventListener('click', async () => {
   const adminKey = ensureAdminKey();
   if (!adminKey) return;
